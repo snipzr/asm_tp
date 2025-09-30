@@ -4,7 +4,6 @@ section .bss
 section .text
     global _start
 
-
 _start:
     mov     rax, 0
     mov     rdi, 0
@@ -22,9 +21,9 @@ _start:
     test    r9d, r9d
     je      .parsed
     cmp     r9d, '0'
-    jb      exit_nonprime
+    jb      exit_badinput
     cmp     r9d, '9'
-    ja      exit_nonprime
+    ja      exit_badinput
     imul    rax, rax, 10
     sub     r9d, '0'
     add     rax, r9
@@ -32,13 +31,9 @@ _start:
     mov     r8d, 1
     jmp     .parse
 
-
-
-
-
 .parsed:
     test    r8d, r8d
-    jz      exit_nonprime
+    jz      exit_badinput
 
     cmp     rax, 2
     jb      exit_nonprime
@@ -60,17 +55,17 @@ _start:
     add     rdi, 2
     jmp     .loop
 
-
-
 exit_prime:
     mov     rax, 60
     xor     rdi, rdi
     syscall
 
-
-
-
 exit_nonprime:
     mov     rax, 60
     mov     rdi, 1
+    syscall
+
+exit_badinput:
+    mov     rax, 60
+    mov     rdi, 2
     syscall
