@@ -1,5 +1,6 @@
 section .bss
     rbuf    resb 1024
+    pfd     resb 8         
 
 
 section .data
@@ -9,33 +10,21 @@ section .data
         db 127,0,0,1
         times 8 db 0
 
-    tv:     dq 2
-            dq 0
-
     pingmsg db "ping",10
-
     pinglen equ $ - pingmsg
 
     prefix  db 'message: "',0
     prelen  equ $ - prefix
-
     suffix  db '"',10
     sufllen equ $ - suffix
-
-
 
     to_msg  db 'Timeout: no response from server',10
     to_len  equ $ - to_msg
 
 
 
-
-
 section .text
     global _start
-
-
-
 
 
 _start:
@@ -46,14 +35,6 @@ _start:
     syscall
     mov     r12, rax
 
-    mov     rax, 54
-    mov     rdi, r12
-    mov     rsi, 1
-    mov     rdx, 20
-    lea     r10, [rel tv]
-    mov     r8, 16
-    syscall
-
     mov     rax, 44
     mov     rdi, r12
     lea     rsi, [rel pingmsg]
@@ -62,6 +43,19 @@ _start:
     lea     r8,  [rel srvaddr]
     mov     r9d, 16
     syscall
+
+    mov     dword [pfd+0], r12d
+    mov     word  [pfd+4], 1
+    mov     word  [pfd+6], 0
+
+    mov     rax, 7
+    lea     rdi, [rel pfd]
+    mov     rsi, 1
+    mov     rdx, 2000
+    syscall
+    cmp     rax, 0
+    jle     no_reply
+
 
     mov     rax, 45
     mov     rdi, r12
@@ -72,9 +66,9 @@ _start:
     xor     r9,  r9
     syscall
     mov     r13, rax
-
     test    r13, r13
-    js      .timeout
+    jle     no_reply
+
 
     mov     rax, 1
     mov     rdi, 1
@@ -94,6 +88,7 @@ _start:
     mov     rdx, sufllen
     syscall
 
+
     mov     rax, 3
     mov     rdi, r12
     syscall
@@ -103,7 +98,9 @@ _start:
     syscall
 
 
-.timeout:
+
+no_reply:
+    ; message de timeout, close + exit(1)
     mov     rax, 1
     mov     rdi, 1
     lea     rsi, [rel to_msg]
@@ -117,5 +114,3 @@ _start:
     mov     rax, 60
     mov     rdi, 1
     syscall
-
-    
